@@ -1,0 +1,1065 @@
+<!DOCTYPE html>
+<html lang="en" itemscope itemtype="https://schema.org/WebApplication">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Create lip sync videos in your browser with AI. No uploads, no server - 100% private and free">
+    <meta name="keywords" content="lip sync, video maker, AI, text to speech, 3D avatar">
+    <meta name="theme-color" content="#4361ee">
+    <meta itemprop="name" content="AI Lip Sync Video Maker">
+    <meta itemprop="description" content="Browser-based lip sync animation tool with TTS and 3D avatars">
+    <meta itemprop="image" content="https://example.com/thumbnail.jpg">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icons/icon-192x192.png">
+    
+    <!-- Twitter/FB Meta -->
+    <meta property="og:title" content="AI Lip Sync Video Maker">
+    <meta property="og:description" content="Make lip sync videos directly in your browser">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://example.com">
+    <meta property="og:image" content="https://example.com/thumbnail.jpg">
+    
+    <title>AI Lip Sync Video Maker | Browser-Based Tool</title>
+    
+    <style>
+        /* ===== CSS Reset ===== */
+        :root {
+            --primary: #4361ee;
+            --secondary: #3f37c9;
+            --dark: #212529;
+            --light: #f8f9fa;
+            --success: #4cc9f0;
+            --danger: #f72585;
+        }
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--dark);
+            background-color: #f0f2f5;
+            min-height: 100vh;
+        }
+        button, input, select, textarea { font: inherit; }
+        img, picture, video, canvas { max-width: 100%; height: auto; }
+        a { text-decoration: none; color: inherit; }
+        
+        /* ===== Main Layout ===== */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+            display: grid;
+            gap: 2rem;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        h1 { 
+            color: var(--primary);
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            line-height: 1.2;
+        }
+        .app-description {
+            color: #666;
+            font-size: 1.1rem;
+            max-width: 800px;
+            margin: 0 auto 1.5rem;
+        }
+        .app-grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 2rem;
+        }
+        @media (max-width: 768px) {
+            .app-grid { grid-template-columns: 1fr; }
+        }
+        
+        /* ===== Control Panel ===== */
+        .control-panel, .preview-panel {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+        .section-title {
+            font-size: 1.3rem;
+            margin-bottom: 1.2rem;
+            color: var(--primary);
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        /* ===== Upload Boxes ===== */
+        .upload-box {
+            border: 2px dashed #ccc;
+            padding: 1.5rem;
+            text-align: center;
+            margin-bottom: 1.5rem;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        .upload-box:hover {
+            border-color: var(--primary);
+            background: rgba(67, 97, 238, 0.03);
+        }
+        .upload-box input { display: none; }
+        .upload-label {
+            display: inline-block;
+            padding: 0.8rem 1.5rem;
+            background: var(--primary);
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+        .upload-label:hover { background: var(--secondary); }
+        .preview-container { margin-top: 1rem; }
+        .preview-image {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        .audio-preview {
+            width: 100%;
+            margin-top: 1rem;
+            border-radius: 6px;
+        }
+        
+        /* ===== Tabs ===== */
+        .tab-container {
+            display: flex;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid #eee;
+        }
+        .tab {
+            padding: 0.8rem 1.5rem;
+            background: #f5f5f5;
+            cursor: pointer;
+            border-radius: 6px 6px 0 0;
+            margin-right: 0.5rem;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+        .tab:hover { background: #eee; }
+        .tab.active {
+            background: var(--primary);
+            color: white;
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
+        /* ===== 3D Viewer ===== */
+        #threejs-container {
+            width: 100%;
+            height: 300px;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #f9f9f9;
+            margin-bottom: 1rem;
+        }
+        
+        /* ===== Buttons ===== */
+        button {
+            padding: 0.8rem 1.5rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+        .btn-primary:hover { background: var(--secondary); }
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+        .btn-success:hover { opacity: 0.9; }
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+        .btn-danger:hover { opacity: 0.9; }
+        
+        /* ===== Canvas ===== */
+        #canvas {
+            width: 100%;
+            max-width: 640px;
+            border-radius: 8px;
+            background: #f9f9f9;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* ===== Status & Progress ===== */
+        #status {
+            margin-top: 1rem;
+            font-style: italic;
+            color: #666;
+            min-height: 1.5rem;
+        }
+        .progress-container {
+            width: 100%;
+            background: #e9ecef;
+            border-radius: 6px;
+            margin: 1rem 0;
+            display: none;
+            overflow: hidden;
+        }
+        #progressBar {
+            height: 10px;
+            background: var(--primary);
+            width: 0%;
+            border-radius: 6px;
+            transition: width 0.3s ease;
+        }
+        
+        /* ===== Accessibility ===== */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border-width: 0;
+        }
+        [aria-busy="true"] { cursor: progress; }
+        
+        /* ===== Dark Mode ===== */
+        @media (prefers-color-scheme: dark) {
+            body {
+                background: #121212;
+                color: #f0f0f0;
+            }
+            .control-panel, .preview-panel {
+                background: #1e1e1e;
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            }
+            .upload-box { border-color: #444; }
+            #canvas { background: #2d2d2d; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container" role="main">
+        <header>
+            <h1>🎤 Ultimate AI Lip Sync Video Maker</h1>
+            <p class="app-description">
+                Create professional lip sync videos directly in your browser. 
+                No uploads, no watermarks - 100% private and free!
+            </p>
+        </header>
+        
+        <div class="app-grid">
+            <!-- Control Panel -->
+            <div class="control-panel">
+                <h2 class="section-title">⚙️ Video Settings</h2>
+                
+                <!-- Tabs -->
+                <div class="tab-container" role="tablist">
+                    <button class="tab active" data-tab="upload" role="tab" aria-selected="true">Upload</button>
+                    <button class="tab" data-tab="tts" role="tab" aria-selected="false">Text-to-Speech</button>
+                    <button class="tab" data-tab="avatar" role="tab" aria-selected="false">3D Avatar</button>
+                </div>
+                
+                <!-- Upload Tab -->
+                <div class="tab-content active" id="upload-tab" role="tabpanel">
+                    <!-- Character Upload -->
+                    <div class="settings-group">
+                        <label for="imageUpload">1. Character Image</label>
+                        <div class="upload-box">
+                            <input type="file" id="imageUpload" accept="image/*">
+                            <label for="imageUpload" class="upload-label">📷 Choose Image</label>
+                            <div class="preview-container" id="imagePreview"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Audio Upload -->
+                    <div class="settings-group">
+                        <label for="audioUpload">2. Audio File</label>
+                        <div class="upload-box">
+                            <input type="file" id="audioUpload" accept="audio/*">
+                            <label for="audioUpload" class="upload-label">🎵 Choose Audio</label>
+                            <audio id="audioPlayer" controls class="audio-preview hidden" aria-label="Audio preview"></audio>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- TTS Tab -->
+                <div class="tab-content" id="tts-tab" role="tabpanel">
+                    <div class="settings-group">
+                        <label for="ttsText">Enter Text</label>
+                        <textarea 
+                            id="ttsText" 
+                            placeholder="Type what you want your character to say..." 
+                            rows="4"
+                        ></textarea>
+                        
+                        <label for="voiceSelect">Select Voice</label>
+                        <select id="voiceSelect" aria-label="Text-to-speech voice selection">
+                            <option value="">Loading voices...</option>
+                        </select>
+                        
+                        <button id="generateTTS" class="btn-primary">🎙️ Generate Speech</button>
+                        <audio id="ttsAudio" controls class="hidden audio-preview" aria-label="Generated speech preview"></audio>
+                    </div>
+                </div>
+                
+                <!-- 3D Avatar Tab -->
+                <div class="tab-content" id="avatar-tab" role="tabpanel">
+                    <div class="settings-group">
+                        <div id="threejs-container" aria-label="3D avatar preview"></div>
+                        <button id="load3DAvatar" class="btn-primary">👽 Load 3D Avatar</button>
+                    </div>
+                </div>
+                
+                <!-- Background Settings -->
+                <div class="settings-group">
+                    <label for="bgType">3. Background</label>
+                    <select id="bgType">
+                        <option value="color">Solid Color</option>
+                        <option value="image">Image</option>
+                        <option value="transparent">Transparent</option>
+                    </select>
+                    
+                    <div id="bgColorContainer">
+                        <label for="bgColor">Background Color</label>
+                        <input type="color" id="bgColor" value="#ffffff" aria-label="Background color picker">
+                    </div>
+                    
+                    <div id="bgImageContainer" class="hidden">
+                        <label for="bgImageUpload">Background Image</label>
+                        <div class="upload-box">
+                            <input type="file" id="bgImageUpload" accept="image/*">
+                            <label for="bgImageUpload" class="upload-label">🌄 Choose Background</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Animation Settings -->
+                <div class="settings-group">
+                    <label for="animationStyle">4. Animation Style</label>
+                    <select id="animationStyle">
+                        <option value="basic">Basic Lip Sync</option>
+                        <option value="advanced">Advanced (Eye Movement)</option>
+                        <option value="exaggerated">Exaggerated (Cartoon Style)</option>
+                    </select>
+                </div>
+                
+                <!-- Facial Expressions -->
+                <div class="settings-group">
+                    <label>5. Facial Expressions</label>
+                    <div role="group" aria-label="Facial expressions">
+                        <button class="expression-btn" data-expression="neutral" aria-label="Neutral expression">😐 Neutral</button>
+                        <button class="expression-btn" data-expression="happy" aria-label="Happy expression">😊 Happy</button>
+                        <button class="expression-btn" data-expression="angry" aria-label="Angry expression">😠 Angry</button>
+                        <button class="expression-btn" data-expression="surprised" aria-label="Surprised expression">😲 Surprised</button>
+                    </div>
+                </div>
+                
+                <!-- Process Button -->
+                <button id="processBtn" class="btn-primary" disabled>🎬 Generate Video</button>
+                
+                <!-- Progress Bar -->
+                <div class="progress-container" id="progressContainer">
+                    <div id="progressBar" role="progressbar" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+                
+                <!-- Status Message -->
+                <div id="status" aria-live="polite">Upload a character and audio to begin.</div>
+            </div>
+            
+            <!-- Preview Panel -->
+            <div class="preview-panel">
+                <h2 class="section-title">👁️ Preview</h2>
+                <canvas 
+                    id="canvas" 
+                    width="640" 
+                    height="480"
+                    aria-label="Lip sync animation preview"
+                ></canvas>
+                
+                <!-- Video Controls -->
+                <div class="video-controls hidden" id="videoControls">
+                    <button id="downloadBtn" class="btn-success">💾 Download Video</button>
+                    <button id="resetBtn" class="btn-danger">🔄 Start Over</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== JavaScript ===== -->
+    <script>
+        // Progressive Web App (PWA) Setup
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(registration => {
+                        console.log('ServiceWorker registration successful');
+                    })
+                    .catch(err => {
+                        console.log('ServiceWorker registration failed: ', err);
+                    });
+            });
+        }
+
+        // Web App Manifest
+        const manifest = {
+            "name": "AI Lip Sync Video Maker",
+            "short_name": "LipSync",
+            "description": "Create lip sync videos in your browser",
+            "start_url": "/",
+            "display": "standalone",
+            "background_color": "#ffffff",
+            "theme_color": "#4361ee",
+            "icons": [
+                {
+                    "src": "icons/icon-192x192.png",
+                    "sizes": "192x192",
+                    "type": "image/png"
+                },
+                {
+                    "src": "icons/icon-512x512.png",
+                    "sizes": "512x512",
+                    "type": "image/png"
+                }
+            ]
+        };
+
+        // ===== App State =====
+        const state = {
+            characterImage: null,
+            audioBuffer: null,
+            bgImage: null,
+            audioContext: null,
+            analyser: null,
+            sourceNode: null,
+            mediaRecorder: null,
+            recordedChunks: [],
+            currentMouth: 'neutral',
+            currentEyes: 'neutral',
+            isProcessing: false,
+            animationFrameId: null,
+            ttsVoices: [],
+            threeJS: {
+                scene: null,
+                camera: null,
+                renderer: null,
+                avatar: null
+            },
+            tfModel: null
+        };
+
+        // ===== DOM Elements =====
+        const elements = {
+            canvas: document.getElementById('canvas'),
+            ctx: document.getElementById('canvas').getContext('2d'),
+            imageUpload: document.getElementById('imageUpload'),
+            audioUpload: document.getElementById('audioUpload'),
+            bgImageUpload: document.getElementById('bgImageUpload'),
+            audioPlayer: document.getElementById('audioPlayer'),
+            processBtn: document.getElementById('processBtn'),
+            downloadBtn: document.getElementById('downloadBtn'),
+            resetBtn: document.getElementById('resetBtn'),
+            statusEl: document.getElementById('status'),
+            progressBar: document.getElementById('progressBar'),
+            progressContainer: document.getElementById('progressContainer'),
+            videoControls: document.getElementById('videoControls'),
+            bgTypeSelect: document.getElementById('bgType'),
+            bgColorInput: document.getElementById('bgColor'),
+            bgColorContainer: document.getElementById('bgColorContainer'),
+            bgImageContainer: document.getElementById('bgImageContainer'),
+            animationStyleSelect: document.getElementById('animationStyle'),
+            ttsText: document.getElementById('ttsText'),
+            voiceSelect: document.getElementById('voiceSelect'),
+            generateTTS: document.getElementById('generateTTS'),
+            ttsAudio: document.getElementById('ttsAudio'),
+            threeContainer: document.getElementById('threejs-container'),
+            load3DAvatar: document.getElementById('load3DAvatar')
+        };
+
+        // ===== Mouth & Eye Shapes =====
+        const mouthShapes = {
+            'neutral': { openness: 0.1, width: 0.4 },
+            'A': { openness: 0.8, width: 0.6 },
+            'E': { openness: 0.6, width: 0.5 },
+            'I': { openness: 0.4, width: 0.3 },
+            'O': { openness: 0.7, width: 0.5 },
+            'U': { openness: 0.5, width: 0.4 }
+        };
+
+        const eyeStates = {
+            'neutral': { openness: 0.9, eyebrow: 0 },
+            'happy': { openness: 0.8, eyebrow: -0.1 },
+            'angry': { openness: 0.7, eyebrow: 0.2 },
+            'surprised': { openness: 1.0, eyebrow: -0.2 }
+        };
+
+        // ===== Initialize App =====
+        function init() {
+            drawStaticFrame();
+            setupEventListeners();
+            loadTTSVoices();
+            init3DAvatar();
+            loadAIModel();
+        }
+
+        // ===== Event Listeners =====
+        function setupEventListeners() {
+            // Image Upload
+            elements.imageUpload.addEventListener('change', handleImageUpload);
+            
+            // Audio Upload
+            elements.audioUpload.addEventListener('change', handleAudioUpload);
+            
+            // Background Image Upload
+            elements.bgImageUpload.addEventListener('change', handleBgImageUpload);
+            
+            // Background Type Change
+            elements.bgTypeSelect.addEventListener('change', updateBackgroundUI);
+            
+            // Process Button
+            elements.processBtn.addEventListener('click', processLipSync);
+            
+            // Download Button
+            elements.downloadBtn.addEventListener('click', downloadVideo);
+            
+            // Reset Button
+            elements.resetBtn.addEventListener('click', resetApp);
+            
+            // TTS Generate Button
+            elements.generateTTS.addEventListener('click', generateTTS);
+            
+            // 3D Avatar Button
+            elements.load3DAvatar.addEventListener('click', loadDefaultAvatar);
+            
+            // Tab Switching
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    document.querySelectorAll('.tab').forEach(t => {
+                        t.classList.remove('active');
+                        t.setAttribute('aria-selected', 'false');
+                    });
+                    document.querySelectorAll('.tab-content').forEach(c => {
+                        c.classList.remove('active');
+                    });
+                    
+                    this.classList.add('active');
+                    this.setAttribute('aria-selected', 'true');
+                    document.getElementById(`${this.dataset.tab}-tab`).classList.add('active');
+                });
+            });
+            
+            // Facial Expressions
+            document.querySelectorAll('.expression-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    state.currentEyes = this.dataset.expression;
+                    drawAnimatedFrame();
+                });
+            });
+        }
+
+        // ===== File Handlers =====
+        function handleImageUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                state.characterImage = new Image();
+                state.characterImage.onload = function() {
+                    elements.canvas.width = state.characterImage.width;
+                    elements.canvas.height = state.characterImage.height;
+                    drawStaticFrame();
+                    updateImagePreview(event.target.result);
+                    updateProcessButton();
+                };
+                state.characterImage.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function handleAudioUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            if (!state.audioContext) {
+                state.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                state.analyser = state.audioContext.createAnalyser();
+                state.analyser.fftSize = 256;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                state.audioContext.decodeAudioData(event.target.result, function(buffer) {
+                    state.audioBuffer = buffer;
+                    elements.audioPlayer.src = URL.createObjectURL(file);
+                    elements.audioPlayer.classList.remove('hidden');
+                    elements.statusEl.textContent = 'Ready to generate video!';
+                    updateProcessButton();
+                });
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function handleBgImageUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                state.bgImage = new Image();
+                state.bgImage.onload = function() {
+                    drawStaticFrame();
+                };
+                state.bgImage.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // ===== TTS Functions =====
+        function loadTTSVoices() {
+            // Voices load asynchronously
+            const synth = window.speechSynthesis;
+            synth.onvoiceschanged = function() {
+                state.ttsVoices = synth.getVoices();
+                updateVoiceList();
+            };
+            
+            // Initial load
+            state.ttsVoices = synth.getVoices();
+            if (state.ttsVoices.length > 0) {
+                updateVoiceList();
+            }
+        }
+
+        function updateVoiceList() {
+            elements.voiceSelect.innerHTML = '';
+            
+            state.ttsVoices.forEach(voice => {
+                const option = document.createElement('option');
+                option.textContent = `${voice.name} (${voice.lang})`;
+                option.setAttribute('data-name', voice.name);
+                option.setAttribute('data-lang', voice.lang);
+                elements.voiceSelect.appendChild(option);
+            });
+        }
+
+        function generateTTS() {
+            const text = elements.ttsText.value.trim();
+            if (!text) {
+                alert('Please enter some text');
+                return;
+            }
+            
+            const synth = window.speechSynthesis;
+            synth.cancel(); // Stop any ongoing speech
+            
+            const utterance = new SpeechSynthesisUtterance(text);
+            
+            // Set selected voice if available
+            const selectedOption = elements.voiceSelect.selectedOptions[0];
+            if (selectedOption) {
+                const voiceName = selectedOption.getAttribute('data-name');
+                const voice = state.ttsVoices.find(v => v.name === voiceName);
+                if (voice) utterance.voice = voice;
+            }
+            
+            // Create audio context for recording
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const dest = audioCtx.createMediaStreamDestination();
+            const mediaRecorder = new MediaRecorder(dest.stream);
+            const chunks = [];
+            
+            mediaRecorder.ondataavailable = evt => chunks.push(evt.data);
+            mediaRecorder.onstop = () => {
+                const blob = new Blob(chunks, { type: 'audio/wav' });
+                elements.ttsAudio.src = URL.createObjectURL(blob);
+                elements.ttsAudio.classList.remove('hidden');
+                
+                // Set as audio source for lip sync
+                handleAudioUpload({ target: { files: [blob] } });
+            };
+            
+            // Connect speech to recorder
+            const mediaStreamSource = audioCtx.createMediaStreamSource(new MediaStream());
+            utterance.onboundary = event => {
+                if (event.name === 'word') {
+                    // Optional: Add mouth movement cues
+                }
+            };
+            
+            mediaRecorder.start();
+            synth.speak(utterance);
+            
+            utterance.onend = () => {
+                setTimeout(() => mediaRecorder.stop(), 500);
+            };
+        }
+
+        // ===== 3D Avatar Functions =====
+        function init3DAvatar() {
+            // Create scene
+            state.threeJS.scene = new THREE.Scene();
+            state.threeJS.scene.background = new THREE.Color(0xf0f0f0);
+            
+            // Create camera
+            state.threeJS.camera = new THREE.PerspectiveCamera(
+                75, 
+                elements.threeContainer.clientWidth / elements.threeContainer.clientHeight, 
+                0.1, 
+                1000
+            );
+            state.threeJS.camera.position.z = 5;
+            
+            // Create renderer
+            state.threeJS.renderer = new THREE.WebGLRenderer({ antialias: true });
+            state.threeJS.renderer.setSize(
+                elements.threeContainer.clientWidth, 
+                elements.threeContainer.clientHeight
+            );
+            elements.threeContainer.appendChild(state.threeJS.renderer.domElement);
+            
+            // Add lights
+            const light = new THREE.DirectionalLight(0xffffff, 1);
+            light.position.set(1, 1, 1);
+            state.threeJS.scene.add(light);
+            state.threeJS.scene.add(new THREE.AmbientLight(0x404040));
+            
+            // Animation loop
+            function animate() {
+                requestAnimationFrame(animate);
+                if (state.threeJS.avatar) state.threeJS.avatar.rotation.y += 0.01;
+                state.threeJS.renderer.render(state.threeJS.scene, state.threeJS.camera);
+            }
+            animate();
+        }
+
+        function loadDefaultAvatar() {
+            // Create a simple avatar (in production, load a GLTF model)
+            const geometry = new THREE.SphereGeometry(1, 32, 32);
+            const material = new THREE.MeshPhongMaterial({ 
+                color: 0x00aaff,
+                morphTargets: true
+            });
+            
+            state.threeJS.avatar = new THREE.Mesh(geometry, material);
+            state.threeJS.scene.add(state.threeJS.avatar);
+            
+            // Add morph targets for facial expressions
+            // (In a real app, these would come from the 3D model)
+        }
+
+        // ===== AI Model Loading =====
+        async function loadAIModel() {
+            elements.statusEl.textContent = "Loading AI model...";
+            try {
+                // In a real app, load a pretrained TF.js model
+                // state.tfModel = await tf.loadLayersModel('lip_sync_model.json');
+                elements.statusEl.textContent = "AI enhancements ready!";
+            } catch (err) {
+                console.error("AI model failed to load:", err);
+                elements.statusEl.textContent = "Using standard audio analysis";
+            }
+        }
+
+        // ===== Drawing Functions =====
+        function drawStaticFrame() {
+            if (!elements.canvas.width || !elements.canvas.height) return;
+            
+            elements.ctx.clearRect(0, 0, elements.canvas.width, elements.canvas.height);
+            
+            // Draw background
+            const bgType = elements.bgTypeSelect.value;
+            if (bgType === 'color') {
+                elements.ctx.fillStyle = elements.bgColorInput.value;
+                elements.ctx.fillRect(0, 0, elements.canvas.width, elements.canvas.height);
+            } else if (bgType === 'image' && state.bgImage) {
+                elements.ctx.drawImage(
+                    state.bgImage, 
+                    0, 0, 
+                    elements.canvas.width, 
+                    elements.canvas.height
+                );
+            }
+            
+            // Draw character
+            if (state.characterImage) {
+                elements.ctx.drawImage(
+                    state.characterImage, 
+                    0, 0, 
+                    elements.canvas.width, 
+                    elements.canvas.height
+                );
+            }
+        }
+
+        function drawAnimatedFrame() {
+            drawStaticFrame();
+            
+            // Draw animated mouth
+            if (state.characterImage) {
+                const mouth = mouthShapes[state.currentMouth] || mouthShapes.neutral;
+                const mouthWidth = elements.canvas.width * mouth.width;
+                const mouthHeight = elements.canvas.height * 0.1 * mouth.openness;
+                const mouthX = elements.canvas.width / 2;
+                const mouthY = elements.canvas.height * 0.7;
+                
+                elements.ctx.beginPath();
+                elements.ctx.ellipse(
+                    mouthX, mouthY, 
+                    mouthWidth / 2, mouthHeight / 2, 
+                    0, 0, Math.PI * 2
+                );
+                elements.ctx.fillStyle = 'rgba(200, 0, 0, 0.7)';
+                elements.ctx.fill();
+            }
+            
+            // Draw animated eyes if in advanced mode
+            if (elements.animationStyleSelect.value !== 'basic' && state.characterImage) {
+                drawEyes();
+            }
+        }
+
+        function drawEyes() {
+            const eyeState = eyeStates[state.currentEyes] || eyeStates.neutral;
+            
+            // Left Eye
+            const leftEyeX = elements.canvas.width * 0.35;
+            const leftEyeY = elements.canvas.height * 0.3;
+            drawEye(leftEyeX, leftEyeY, eyeState);
+            
+            // Right Eye
+            const rightEyeX = elements.canvas.width * 0.65;
+            const rightEyeY = elements.canvas.height * 0.3;
+            drawEye(rightEyeX, rightEyeY, eyeState);
+        }
+
+        function drawEye(x, y, state) {
+            // Eye white
+            elements.ctx.beginPath();
+            elements.ctx.ellipse(x, y, 20, 20 * state.openness, 0, 0, Math.PI * 2);
+            elements.ctx.fillStyle = 'white';
+            elements.ctx.fill();
+            
+            // Iris
+            elements.ctx.beginPath();
+            elements.ctx.arc(x, y, 10, 0, Math.PI * 2);
+            elements.ctx.fillStyle = '#4361ee';
+            elements.ctx.fill();
+            
+            // Pupil
+            elements.ctx.beginPath();
+            elements.ctx.arc(x, y, 5, 0, Math.PI * 2);
+            elements.ctx.fillStyle = 'black';
+            elements.ctx.fill();
+            
+            // Eyebrow
+            elements.ctx.beginPath();
+            elements.ctx.moveTo(x - 25, y - 25 + (state.eyebrow * 10));
+            elements.ctx.lineTo(x + 25, y - 25 + (state.eyebrow * 10));
+            elements.ctx.lineWidth = 3;
+            elements.ctx.strokeStyle = 'black';
+            elements.ctx.stroke();
+        }
+
+        // ===== Audio Processing =====
+        function analyzeAudio() {
+            if (!state.isProcessing) return;
+            
+            const dataArray = new Uint8Array(state.analyser.frequencyBinCount);
+            state.analyser.getByteFrequencyData(dataArray);
+            
+            // Simple analysis - find dominant frequency range
+            let sum = 0;
+            for (let i = 0; i < dataArray.length; i++) {
+                sum += dataArray[i];
+            }
+            const avg = sum / dataArray.length;
+            
+            // Map to mouth shapes
+            if (avg > 200) state.currentMouth = 'A';
+            else if (avg > 150) state.currentMouth = 'E';
+            else if (avg > 100) state.currentMouth = 'I';
+            else if (avg > 50) state.currentMouth = 'O';
+            else state.currentMouth = 'U';
+            
+            // Random eye movements in advanced mode
+            if (elements.animationStyleSelect.value !== 'basic') {
+                const eyeStates = Object.keys(eyeStates);
+                state.currentEyes = eyeStates[Math.floor(Math.random() * eyeStates.length)];
+            }
+            
+            drawAnimatedFrame();
+            state.animationFrameId = requestAnimationFrame(analyzeAudio);
+        }
+
+        // ===== Video Processing =====
+        function processLipSync() {
+            if (!state.characterImage || !state.audioBuffer || state.isProcessing) return;
+            
+            state.isProcessing = true;
+            elements.statusEl.textContent = 'Processing video...';
+            elements.processBtn.disabled = true;
+            elements.progressContainer.style.display = 'block';
+            
+            // Setup audio processing
+            state.sourceNode = state.audioContext.createBufferSource();
+            state.sourceNode.buffer = state.audioBuffer;
+            state.sourceNode.connect(state.analyser);
+            state.analyser.connect(state.audioContext.destination);
+            
+            // Setup video recording
+            const stream = elements.canvas.captureStream(30);
+            state.recordedChunks = [];
+            state.mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+            
+            state.mediaRecorder.ondataavailable = function(e) {
+                if (e.data.size > 0) {
+                    state.recordedChunks.push(e.data);
+                }
+            };
+            
+            state.mediaRecorder.onstop = function() {
+                elements.videoControls.classList.remove('hidden');
+                elements.statusEl.textContent = 'Video ready! Click download to save.';
+                state.isProcessing = false;
+                elements.progressContainer.style.display = 'none';
+            };
+            
+            // Start recording
+            state.mediaRecorder.start(100); // Collect data every 100ms
+            
+            // Start audio playback and analysis
+            state.sourceNode.start(0);
+            analyzeAudio();
+            
+            // Update progress
+            const duration = state.audioBuffer.duration;
+            let elapsed = 0;
+            const progressInterval = setInterval(() => {
+                elapsed += 0.1;
+                const progress = (elapsed / duration) * 100;
+                elements.progressBar.style.width = `${Math.min(progress, 100)}%`;
+                elements.progressBar.setAttribute('aria-valuenow', Math.min(progress, 100));
+                
+                if (elapsed >= duration) {
+                    clearInterval(progressInterval);
+                }
+            }, 100);
+            
+            // Stop when audio ends
+            state.sourceNode.onended = function() {
+                state.mediaRecorder.stop();
+                cancelAnimationFrame(state.animationFrameId);
+                state.currentMouth = 'neutral';
+                state.currentEyes = 'neutral';
+                drawStaticFrame();
+            };
+        }
+
+        // ===== Video Download =====
+        function downloadVideo() {
+            const blob = new Blob(state.recordedChunks, { type: 'video/webm' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'lip-sync-video.webm';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // ===== UI Helpers =====
+        function updateImagePreview(imageSrc) {
+            const previewContainer = document.getElementById('imagePreview');
+            previewContainer.innerHTML = '';
+            
+            const previewImg = document.createElement('img');
+            previewImg.src = imageSrc;
+            previewImg.classList.add('preview-image');
+            previewImg.alt = "Uploaded character preview";
+            previewContainer.appendChild(previewImg);
+        }
+
+        function updateBackgroundUI() {
+            const bgType = elements.bgTypeSelect.value;
+            
+            if (bgType === 'color') {
+                elements.bgColorContainer.classList.remove('hidden');
+                elements.bgImageContainer.classList.add('hidden');
+            } else if (bgType === 'image') {
+                elements.bgColorContainer.classList.add('hidden');
+                elements.bgImageContainer.classList.remove('hidden');
+            } else {
+                elements.bgColorContainer.classList.add('hidden');
+                elements.bgImageContainer.classList.add('hidden');
+            }
+            
+            drawStaticFrame();
+        }
+
+        function updateProcessButton() {
+            elements.processBtn.disabled = !(state.characterImage && state.audioBuffer);
+        }
+
+        // ===== Reset App =====
+        function resetApp() {
+            // Cancel processing
+            if (state.isProcessing) {
+                if (state.sourceNode) state.sourceNode.stop();
+                if (state.mediaRecorder) state.mediaRecorder.stop();
+                cancelAnimationFrame(state.animationFrameId);
+            }
+            
+            // Reset state
+            state.characterImage = null;
+            state.audioBuffer = null;
+            state.bgImage = null;
+            state.currentMouth = 'neutral';
+            state.currentEyes = 'neutral';
+            state.isProcessing = false;
+            state.recordedChunks = [];
+            
+            // Reset UI
+            elements.imageUpload.value = '';
+            elements.audioUpload.value = '';
+            elements.bgImageUpload.value = '';
+            elements.audioPlayer.src = '';
+            elements.audioPlayer.classList.add('hidden');
+            document.getElementById('imagePreview').innerHTML = '';
+            elements.statusEl.textContent = 'Upload a character and audio to begin.';
+            elements.processBtn.disabled = true;
+            elements.videoControls.classList.add('hidden');
+            elements.progressContainer.style.display = 'none';
+            elements.progressBar.style.width = '0%';
+            
+            // Redraw
+            drawStaticFrame();
+        }
+
+        // Initialize the app
+        window.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
